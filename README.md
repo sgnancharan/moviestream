@@ -4,6 +4,7 @@
 [![HTML5](https://img.shields.io/badge/HTML5-E34C26?style=flat&logo=html5&logoColor=white)](https://html.spec.whatwg.org/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://www.javascript.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)](https://firebase.google.com/)
+![TMDB](https://shields.io)
 
 ## 📋 Table of Contents
 
@@ -127,7 +128,7 @@ Before you begin, ensure you have the following:
 ### 1. Clone or Download the Repository
 
 ```bash
-git clone https://github.com/yourusername/moviestream.git
+git clone https://github.com/sgnancharan/moviestream.git
 cd moviestream
 ```
 
