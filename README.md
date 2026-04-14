@@ -32,6 +32,8 @@
 
 Whether you're a casual viewer looking for something new or an avid film enthusiast seeking specific genres and languages, MovieStream simplifies the discovery process with personalized recommendations and comprehensive filtering options.
 
+[🚀 **LAUNCH LIVE APP**](https://sgnancharan.github.io/moviestream/)
+
 ---
 
 ## ✨ Features
