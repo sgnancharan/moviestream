@@ -200,6 +200,35 @@
         .history-modal h3 { margin-top: 0; color: var(--red); }
         .history-modal-close { position: absolute; top: 10px; right: 15px; background: #555; border: none; color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; padding: 0; line-height: 1; }
         .history-modal-close:hover { background: #666; }
+        
+        /* Modal Heart Button */
+        .modal-heart-btn {
+            position: absolute;
+            top: 15px;
+            right: 55px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            filter: drop-shadow(0 0 0px var(--red));
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-heart-btn:hover { transform: scale(1.3); }
+        .modal-heart-btn.favorited { 
+            filter: drop-shadow(0 0 6px var(--red));
+            animation: heartGlow 0.3s ease;
+        }
+        @keyframes heartGlow { 
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
 
         /* Responsive Design */
         @media (max-width: 1024px) {
@@ -396,6 +425,7 @@
             <!-- History Item Modal -->
             <div id="history-modal" class="history-modal">
                 <button class="history-modal-close" onclick="document.getElementById('history-modal').style.display='none';">✕</button>
+                <button id="modal-heart-btn" class="modal-heart-btn" title="Add to Favorites">♡</button>
                 <img id="history-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">
                 <h3 id="history-modal-title" style="margin: 10px 0;"></h3>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
@@ -502,6 +532,7 @@
         let selectedOTT = ''; // OTT filter
         let favorites = []; // Favorites list
         let currentMovie = null; // Current displayed movie for favorites
+        let currentModalMovie = null; // Current movie shown in modal for favorite operations
         let favoriteGenrePreference = []; // Cached favorite genre preferences
 
         // Utility Functions
@@ -595,7 +626,45 @@
             favorites = favorites.filter(f => f.id !== movieId);
             saveFavorites();
             updateFavoritesDisplay();
+            updateModalHeartButton();
             showToast('❤️ Removed from Favorites', 'success');
+        }
+
+        function updateModalHeartButton() {
+            if (!currentModalMovie) return;
+            const heartBtn = document.getElementById('modal-heart-btn');
+            const isFavorited = favorites.some(f => f.id === currentModalMovie.id);
+            
+            if (isFavorited) {
+                heartBtn.innerHTML = '❤️';
+                heartBtn.classList.add('favorited');
+            } else {
+                heartBtn.innerHTML = '♡';
+                heartBtn.classList.remove('favorited');
+            }
+        }
+
+        function toggleModalFavorite() {
+            if (!currentModalMovie) return;
+            
+            const isFavorited = favorites.some(f => f.id === currentModalMovie.id);
+            
+            if (isFavorited) {
+                removeFromFavorites(currentModalMovie.id);
+            } else {
+                const newFav = {
+                    id: currentModalMovie.id,
+                    title: currentModalMovie.title || currentModalMovie.name,
+                    poster: currentModalMovie.poster_path,
+                    type: currentModalMovie.media_type || currentType
+                };
+                
+                favorites.push(newFav);
+                saveFavorites();
+                updateFavoritesDisplay();
+                updateModalHeartButton();
+                showToast('❤️ Added to Favorites!', 'success');
+            }
         }
 
         function updateFavoritesDisplay() {
@@ -726,6 +795,11 @@
         document.getElementById('add-to-favorites-btn').onclick = () => {
             if (!currentMovie) return;
             addToFavorites(currentMovie);
+        };
+
+        // Modal Heart Button
+        document.getElementById('modal-heart-btn').onclick = () => {
+            toggleModalFavorite();
         };
 
         // Help Modal button
@@ -1079,6 +1153,8 @@
 
         function showHistoryModal(movie, otts, dubbed = []) {
             const modal = document.getElementById('history-modal');
+            currentModalMovie = movie; // Store for favorite operations
+            
             document.getElementById('history-modal-title').innerText = movie.title || movie.name;
             
             // Display rating
@@ -1108,6 +1184,9 @@
             dubbedDiv.innerHTML = uniqueDubbed.length
                 ? uniqueDubbed.map(lang => `<span style="background: #444; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; display: inline-block;">${langNames[lang]}</span>`).join('')
                 : `<span style="color: #888; font-size: 12px;">Not available in dubbed versions</span>`;
+            
+            // Update heart button state
+            updateModalHeartButton();
             
             // Show modal at cursor or center
             modal.style.display = 'block';
