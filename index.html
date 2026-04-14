@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Movie Picker</title>
+    <style>
+        :root { --red: #e50914; --black: #141414; --grey: #232323; --green: #22c55e; --yellow: #eab308; }
+        
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 350px; }
+        .toast { 
+            background: #333; 
+            color: white; 
+            padding: 16px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid #ef4444; }
+        .toast.info { border-left: 4px solid #3b82f6; }
+        .toast-close { 
+            cursor: pointer; 
+            margin-left: 15px; 
+            font-size: 18px; 
+            opacity: 0.7; 
+            transition: opacity 0.2s;
+        }
+        .toast-close:hover { opacity: 1; }
+        
+        /* Loading Spinner */
+        .spinner { 
+            display: inline-block; 
+            width: 18px; 
+            height: 18px; 
+            border: 3px solid #444; 
+            border-top-color: var(--red); 
+            border-radius: 50%; 
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Help Modal */
+        .help-modal {
+            position: fixed;
+            background: var(--grey);
+            border: 2px solid var(--red);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 999;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .help-modal h2 { color: var(--red); margin-top: 0; }
+        .help-modal-close { 
+            position: absolute; 
+            top: 10px; 
+            right: 15px; 
+            background: #555; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .keyboards { margin-top: 15px; }
+        .keyboard-item { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 10px; 
+            padding: 8px; 
+            background: #1a1a1a; 
+            border-radius: 6px;
+        }
+        .keyboard-key { 
+            background: var(--red); 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            min-width: 30px; 
+            text-align: center;
+        }
+        
+        /* Favorites Modal */
+        .favorites-modal {
+            position: fixed;
+            background: var(--grey);
+            border: 2px solid var(--red);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 999;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .favorites-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+            gap: 12px; 
+            margin-top: 15px;
+        }
+        .favorite-item { 
+            position: relative; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            overflow: hidden;
+        }
+        .favorite-item img { 
+            width: 100%; 
+            height: auto; 
+            transition: transform 0.2s;
+        }
+        .favorite-item:hover img { transform: scale(1.05); }
+        .favorite-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .favorite-item:hover .favorite-remove { opacity: 1; }
+        
+        /* Search Box */
+        #search-box {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+        }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--black); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 900px; width: 100%; }
+        input, select, button { padding: 12px; margin: 10px 0; border-radius: 4px; border: none; width: 100%; box-sizing: border-box; font-size: 16px; }
+        select { flex: 1; }
+        button { background: var(--red); color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #b20710; }
+        .movie-card { background: var(--grey); padding: 25px; border-radius: 12px; margin-top: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .movie-flex { display: flex; gap: 25px; flex-wrap: wrap; }
+        .movie-flex img { width: 100%; max-width: 250px; border-radius: 8px; }
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; margin-top: 20px; }
+        .history-item img { width: 100%; border-radius: 6px; transition: transform 0.2s; cursor: pointer; }
+        .history-item:hover img { transform: scale(1.05); }
+        #auth-form { max-width: 400px; margin: 80px auto; background: var(--grey); padding: 40px; border-radius: 12px; text-align: center; }
+        .ott-logo { width: 45px; height: 45px; border-radius: 8px; margin-right: 10px; margin-top: 10px; object-fit: contain; background: rgba(255,255,255,0.1); padding: 4px; box-sizing: border-box; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .tab-btn.active { background: var(--red); }
+        .tab-btn:hover { background: #555; }
+        .filter-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+        .filter-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-weight: 500; }
+        .filter-row input[type="checkbox"] { cursor: pointer; width: 18px; height: 18px; }
+        .history-modal { 
+            position: fixed; 
+            background: var(--grey); 
+            border: 2px solid var(--red);
+            border-radius: 12px; 
+            padding: 20px; 
+            max-width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+            display: none; 
+            z-index: 1000; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .history-modal h3 { margin-top: 0; color: var(--red); }
+        .history-modal-close { position: absolute; top: 10px; right: 15px; background: #555; border: none; color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; padding: 0; line-height: 1; }
+        .history-modal-close:hover { background: #666; }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container { max-width: 95%; }
+            .movie-flex { gap: 15px; }
+            .movie-flex img { max-width: 200px; }
+            .history-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+            .container { max-width: 100%; }
+            input, select, button { padding: 10px; font-size: 14px; }
+            .tabs { flex-direction: column; gap: 8px; }
+            .tab-btn { padding: 10px; font-size: 14px; }
+            .movie-card { padding: 15px; }
+            .movie-flex { flex-direction: column; gap: 15px; align-items: center; }
+            .movie-flex img { max-width: 180px; }
+            .ott-logo { width: 40px; height: 40px; }
+            .history-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; }
+            #auth-form { max-width: 90%; margin: 60px auto; padding: 25px; }
+            .history-modal { max-width: 90%; max-height: 80vh; padding: 15px; }
+            #user-display { font-size: 18px; }
+            h1 { font-size: 22px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            .filter-row { flex-wrap: wrap; }
+            .filter-row label { font-size: 13px; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .container { max-width: 100%; }
+            input, select, button { padding: 10px 8px; font-size: 13px; margin: 8px 0; }
+            .tabs { flex-direction: column; gap: 6px; }
+            .tab-btn { padding: 8px; font-size: 12px; }
+            .movie-card { padding: 12px; margin-top: 15px; }
+            .movie-flex { flex-direction: column; gap: 12px; align-items: center; }
+            .movie-flex img { max-width: 150px; }
+            .ott-logo { width: 35px; height: 35px; margin-right: 6px; }
+            .history-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; }
+            #auth-form { max-width: 95%; margin: 40px auto; padding: 20px; }
+            h1 { font-size: 18px; margin: 10px 0; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 14px; }
+            #user-display { font-size: 16px; }
+            .filter-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .filter-row label { font-size: 12px; }
+            .history-modal { 
+                max-width: 95%; 
+                max-height: 85vh; 
+                padding: 12px; 
+                left: 2.5% !important;
+                top: 10% !important;
+            }
+            .history-modal-close { width: 28px; height: 28px; font-size: 16px; }
+            #movie-rating { flex-direction: row; font-size: 14px; }
+            .history-modal-title { font-size: 16px; }
+            p { font-size: 13px; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            input, select, button { padding: 8px 6px; font-size: 12px; }
+            .tabs { gap: 5px; }
+            .tab-btn { padding: 6px; font-size: 11px; }
+            .movie-card { padding: 10px; margin-top: 12px; }
+            .movie-flex img { max-width: 130px; }
+            .ott-logo { width: 32px; height: 32px; margin-right: 4px; }
+            .history-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; }
+            #auth-form { max-width: 100%; margin: 30px auto; padding: 15px; }
+            h1 { font-size: 16px; }
+            h2 { font-size: 14px; }
+            h3 { font-size: 12px; }
+            p { font-size: 12px; }
+            .history-modal { padding: 10px; max-height: 90vh; }
+            .history-modal-close { width: 26px; height: 26px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <!-- LOGIN SCREEN -->
+        <div id="auth-form">
+            <h1 style="color: var(--red);">MovieStream</h1>
+            <p>Login or Signup with Email</p>
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password">
+            <button id="auth-btn">Get Started</button>
+        </div>
+
+        <!-- MAIN APP CONTENT -->
+        <div id="app-content" style="display: none;">
+            <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2 id="user-display">Welcome</h2>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button id="favorites-btn" style="width: auto; background: #444; font-size: 14px; padding: 8px 12px;">❤️ Favorites</button>
+                    <button id="help-btn" style="width: auto; background: #444; font-size: 14px; padding: 8px 12px;">❓ Help</button>
+                    <button id="logout-btn" style="width: auto; background: #444; font-size: 14px;">Logout</button>
+                </div>
+            </div>
+
+            <div style="background: var(--grey); padding: 20px; border-radius: 12px;">
+                <div class="tabs">
+                    <button class="tab-btn active" data-type="movie">🎬 Movies</button>
+                    <button class="tab-btn" data-type="tv">📺 Series</button>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="genre-select" style="flex: 1; min-width: 120px;"><option value="">All Genres</option></select>
+                    <select id="lang-select" style="flex: 1; min-width: 120px;">
+                        <option value="en">English</option>
+                        <option value="hi">Hindi</option>
+                        <option value="te">Telugu</option>
+                        <option value="ta">Tamil</option>
+                        <option value="kn">Kannada</option>
+                        <option value="ml">Malayalam</option>
+                        <option value="mr">Marathi</option>
+                        <option value="pa">Punjabi</option>
+                        <option value="bn">Bengali</option>
+                        <option value="gu">Gujarati</option>
+                        <option value="or">Odia</option>
+                        <option value="ur">Urdu</option>
+                        <option value="es">Spanish</option>
+                        <option value="ko">Korean</option>
+                    </select>
+                    <select id="ott-select" style="flex: 1; min-width: 120px;">
+                        <option value="">All OTTs</option>
+                        <option value="">--- Streaming ---</option>
+                        <option value="Netflix">Netflix</option>
+                        <option value="Amazon Prime Video">Amazon Prime Video</option>
+                        <option value="Disney+">Disney+</option>
+                        <option value="Hotstar">Hotstar</option>
+                        <option value="ZEE5">ZEE5</option>
+                        <option value="SonyLiv">SonyLiv</option>
+                        <option value="Voot">Voot</option>
+                        <option value="MX Player">MX Player</option>
+                        <option value="Jio Cinema">Jio Cinema</option>
+                        <option value="Ertugrul">Ertugrul</option>
+                        <option value="HuluHulu">Hulu</option>
+                        <option value="HBO Max">HBO Max</option>
+                        <option value="Apple TV+">Apple TV+</option>
+                        <option value="Paramount+">Paramount+</option>
+                        <option value="Peacock">Peacock</option>
+                        <option value="YouTube">YouTube</option>
+                        <option value="">--- International ---</option>
+                        <option value="WeTV">WeTV</option>
+                        <option value="Rakuten Viki">Rakuten Viki</option>
+                        <option value="iQiyi">iQiyi</option>
+                        <option value="Bilibili">Bilibili</option>
+                        <option value="MUBI">MUBI</option>
+                        <option value="Criterion Channel">Criterion Channel</option>
+                        <option value="BritBox">BritBox</option>
+                        <option value="Acorn TV">Acorn TV</option>
+                    </select>
+                </div>
+                <div class="filter-row">
+                    <label>
+                        <input type="checkbox" id="dubbed-filter">
+                        🎙️ Show only Dubbed
+                    </label>
+                </div>
+                <button id="spin-btn">🎲 Find My Next Movie</button>
+            </div>
+
+            <!-- RESULT CARD -->
+            <div id="movie-result" class="movie-card">
+                <div class="movie-flex">
+                    <img id="movie-poster" src="" alt="Poster">
+                    <div style="flex: 1;">
+                        <h1 id="movie-title" style="margin-top: 0;"></h1>
+                        <div id="movie-rating" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span id="rating-stars" style="font-size: 20px;"></span>
+                            <span id="rating-value" style="color: #ccc; font-weight: bold;"></span>
+                        </div>
+                        <p id="movie-desc" style="line-height: 1.6; color: #ccc;"></p>
+                        <h3 style="border-top: 1px solid #444; padding-top: 15px;">Watch it on:</h3>
+                        <div id="ott-list"></div>
+                        <h3 style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 8px;">Available Dubbed Languages:</h3>
+                        <div id="dubbed-langs" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        <button id="add-to-favorites-btn" style="margin-top: 20px; background: var(--red); width: auto; padding: 10px 20px;">❤️ Add to Favorites</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 20px;">
+                <h3 style="margin: 0;">Your Watch History</h3>
+                <button id="clear-history-btn" style="width: auto; background: #b20710; font-size: 14px; padding: 8px 15px;">🗑️ Clear History</button>
+            </div>
+            <div id="history-list" class="history-grid"></div>
+            
+            <!-- History Item Modal -->
+            <div id="history-modal" class="history-modal">
+                <button class="history-modal-close" onclick="document.getElementById('history-modal').style.display='none';">✕</button>
+                <img id="history-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">
+                <h3 id="history-modal-title" style="margin: 10px 0;"></h3>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span id="history-modal-rating-stars" style="font-size: 16px;"></span>
+                    <span id="history-modal-rating-value" style="color: #ccc; font-weight: bold; font-size: 12px;"></span>
+                </div>
+                <p id="history-modal-desc" style="line-height: 1.6; color: #ccc; font-size: 14px;"></p>
+                <h4 style="border-top: 1px solid #444; padding-top: 10px; margin-top: 15px; margin-bottom: 8px;">Streaming on:</h4>
+                <div id="history-modal-otts" style="margin-bottom: 15px;"></div>
+                <h4 style="margin-bottom: 8px;">Dubbed Languages:</h4>
+                <div id="history-modal-dubbed"></div>
+            </div>
+            
+            <!-- Help Modal -->
+            <div id="help-modal" class="help-modal">
+                <button class="help-modal-close" onclick="document.getElementById('help-modal').style.display='none';">✕</button>
+                <h2>🎬 MovieStream Help & Shortcuts</h2>
+                
+                <h3>Getting Started</h3>
+                <p>Welcome to MovieStream! Here's how to find your next favorite movie or series:</p>
+                <ol>
+                    <li><strong>Select Type:</strong> Choose between Movies or Series</li>
+                    <li><strong>Pick Language:</strong> Select your preferred language</li>
+                    <li><strong>Choose Platform:</strong> (Optional) Select specific OTT platform</li>
+                    <li><strong>Set Genre:</strong> (Optional) Pick a genre</li>
+                    <li><strong>Enable Dubbed:</strong> (Optional) Check for dubbed versions</li>
+                    <li><strong>Discover:</strong> Click "Find My Next Movie" button</li>
+                </ol>
+                
+                <h3>Keyboard Shortcuts</h3>
+                <div class="keyboards">
+                    <div class="keyboard-item">
+                        <div class="keyboard-key">?</div>
+                        <div>Open this help dialog</div>
+                    </div>
+                    <div class="keyboard-item">
+                        <div class="keyboard-key">F</div>
+                        <div>Open your Favorites/Wishlist</div>
+                    </div>
+                    <div class="keyboard-item">
+                        <div class="keyboard-key">Enter</div>
+                        <div>Start searching for movies</div>
+                    </div>
+                    <div class="keyboard-item">
+                        <div class="keyboard-key">H</div>
+                        <div>Clear all filters to default</div>
+                    </div>
+                </div>
+                
+                <h3>Tips & Tricks</h3>
+                <ul>
+                    <li>💡 Use "All OTTs" to see everything available on any platform</li>
+                    <li>🎙️ Check dubbed versions to find content in your language</li>
+                    <li>⭐ Higher ratings mean better quality content</li>
+                    <li>📱 Click history items to view full details anytime</li>
+                    <li>❤️ Add movies to favorites for quick access later</li>
+                </ul>
+                
+                <h3>Frequently Asked Questions</h3>
+                <p><strong>Q: Why is a movie not showing?</strong></p>
+                <p>A: Movies are searched randomly. If unavailable on selected OTT platform, keep searching!</p>
+                
+                <p><strong>Q: Can I see dubbed versions?</strong></p>
+                <p>A: Yes! Check "Show only Dubbed" to find movies in your language.</p>
+                
+                <p><strong>Q: Is my watch history saved?</strong></p>
+                <p>A: Yes! Each user's history is saved separately and securely.</p>
+            </div>
+            
+            <!-- Favorites Modal -->
+            <div id="favorites-modal" class="favorites-modal">
+                <button class="help-modal-close" onclick="document.getElementById('favorites-modal').style.display='none';">✕</button>
+                <h2>❤️ My Favorites</h2>
+                <div id="favorites-grid" class="favorites-grid"></div>
+                <p id="favorites-empty" style="text-align: center; color: #888;">No favorites yet. Click the ❤️ button on any movie to add it!</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+    // Firebase SDK imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // CONFIGS
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsRPb8kbvw_y7VmPnTcCWysf6HZc6fV7M",
+            authDomain: "movie-finder-e9733.firebaseapp.com",
+            projectId: "movie-finder-e9733",
+            storageBucket: "movie-finder-e9733.firebasestorage.app",
+            messagingSenderId: "348288572334",
+            appId: "1:348288572334:web:e5ea7cece4419c13a0063f"
+        };
+        const TMDB_KEY = '28e7c9d2ecd3c1a04dd368b30e234339'; 
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let userHistoryIds = [];
+        let currentType = 'movie'; // 'movie' or 'tv'
+        let showDubbedOnly = false;
+        let selectedOTT = ''; // OTT filter
+        let favorites = []; // Favorites list
+        let currentMovie = null; // Current displayed movie for favorites
+        let favoriteGenrePreference = []; // Cached favorite genre preferences
+
+        // Utility Functions
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+                <span class="toast-close" onclick="this.parentElement.remove();">✕</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), duration);
+        }
+
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // Analyze favorite genres to prioritize search
+        async function analyzeFavoriteGenres() {
+            if (favorites.length === 0) return [];
+            
+            const genreCount = {};
+            
+            for (let fav of favorites) {
+                try {
+                    const res = await fetch(`https://api.themoviedb.org/3/${fav.type}/${fav.id}?api_key=${TMDB_KEY}`);
+                    const movie = await res.json();
+                    
+                    if (movie.genres && Array.isArray(movie.genres)) {
+                        movie.genres.forEach(g => {
+                            genreCount[g.id] = (genreCount[g.id] || 0) + 1;
+                        });
+                    }
+                } catch (err) { console.error(err); }
+            }
+            
+            // Return top 3 genres sorted by frequency
+            const sorted = Object.entries(genreCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(entry => parseInt(entry[0]));
+            
+            favoriteGenrePreference = sorted;
+            return sorted;
+        }
+
+        // Check if movie matches favorite genres
+        function matchesFavoriteGenres(movieGenreIds) {
+            if (favoriteGenrePreference.length === 0) return false;
+            return favoriteGenrePreference.some(favGenreId => movieGenreIds.includes(favGenreId));
+        }
+
+        function loadFavorites() {
+            const saved = localStorage.getItem(`favorites_${auth.currentUser?.uid}`);
+            favorites = saved ? JSON.parse(saved) : [];
+            updateFavoritesDisplay();
+            // Pre-analyze favorite genres for faster search prioritization
+            if (favorites.length > 0) {
+                analyzeFavoriteGenres();
+            }
+        }
+
+        function saveFavorites() {
+            localStorage.setItem(`favorites_${auth.currentUser?.uid}`, JSON.stringify(favorites));
+            // Update genre preferences after saving
+            if (favorites.length > 0) {
+                analyzeFavoriteGenres();
+            } else {
+                favoriteGenrePreference = [];
+            }
+        }
+
+        function addToFavorites(movie) {
+            if (!favorites.find(f => f.id === movie.id)) {
+                favorites.push({
+                    id: movie.id,
+                    title: movie.title || movie.name,
+                    poster: movie.poster_path,
+                    type: currentType
+                });
+                saveFavorites();
+                showToast('❤️ Added to Favorites!', 'success');
+            } else {
+                showToast('ⓘ Already in Favorites', 'info');
+            }
+        }
+
+        function removeFromFavorites(movieId) {
+            favorites = favorites.filter(f => f.id !== movieId);
+            saveFavorites();
+            updateFavoritesDisplay();
+            showToast('❤️ Removed from Favorites', 'success');
+        }
+
+        function updateFavoritesDisplay() {
+            const grid = document.getElementById('favorites-grid');
+            const empty = document.getElementById('favorites-empty');
+            
+            if (favorites.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+            } else {
+                empty.style.display = 'none';
+                grid.innerHTML = favorites.map(m => `
+                    <div class="favorite-item" onclick="viewFavoriteItem(${m.id}, '${m.type}')">
+                        <img src="https://image.tmdb.org/t/p/w500${m.poster}" alt="${m.title}">
+                        <button class="favorite-remove" onclick="event.stopPropagation(); removeFromFavorites(${m.id});">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function viewFavoriteItem(movieId, type) {
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/${type}/${movieId}?api_key=${TMDB_KEY}`);
+                const movie = await res.json();
+                
+                const provRes = await fetch(`https://api.themoviedb.org/3/${type}/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
+                const provData = await provRes.json();
+                const providers = provData.results?.IN?.flatrate || [];
+                
+                const dubbed = await fetchDubbedLanguages(movieId, type);
+                showHistoryModal(movie, providers, dubbed);
+                document.getElementById('favorites-modal').style.display = 'none';
+            } catch (err) {
+                showToast('Error loading favorite details', 'error');
+            }
+        }
+
+        // AUTHENTICATION LOGIC
+        document.getElementById('auth-btn').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            if (!email || !pass) {
+                showToast('Please fill all fields', 'error');
+                return;
+            }
+            if (!validateEmail(email)) {
+                showToast('Please enter a valid email address', 'error');
+                return;
+            }
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                try { await createUserWithEmailAndPassword(auth, email, pass); } 
+                catch (err) { alert("Check Email/Password format"); }
+            }
+        };
+
+        document.getElementById('logout-btn').onclick = () => {
+            // Reset state when logging out
+            userHistoryIds = [];
+            selectedOTT = '';
+            showDubbedOnly = false;
+            favorites = [];
+            document.getElementById('dubbed-filter').checked = false;
+            document.getElementById('ott-select').value = '';
+            document.getElementById('genre-select').value = '';
+            document.getElementById('lang-select').value = 'en';
+            document.getElementById('movie-result').style.display = 'none';
+            document.getElementById('history-modal').style.display = 'none';
+            document.getElementById('favorites-modal').style.display = 'none';
+            document.getElementById('help-modal').style.display = 'none';
+            document.getElementById('history-list').innerHTML = '';
+            signOut(auth);
+        };
+
+        // Clear History button
+        document.getElementById('clear-history-btn').onclick = async () => {
+            if (confirm('Are you sure you want to clear your watch history?')) {
+                const ref = doc(db, "users", auth.currentUser.uid);
+                await setDoc(ref, {
+                    historyIds: [],
+                    historyFull: []
+                }, { merge: true });
+                syncHistory();
+                document.getElementById('movie-result').style.display = 'none';
+            }
+        };
+
+        // Close modal when clicking outside
+        window.onclick = (event) => {
+            const historyModal = document.getElementById('history-modal');
+            const helpModal = document.getElementById('help-modal');
+            const favoritesModal = document.getElementById('favorites-modal');
+            
+            if (event.target == historyModal) {
+                historyModal.style.display = 'none';
+            } else if (event.target == helpModal) {
+                helpModal.style.display = 'none';
+            } else if (event.target == favoritesModal) {
+                favoritesModal.style.display = 'none';
+            }
+        };
+
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentType = btn.getAttribute('data-type');
+                fetchGenres();
+                document.getElementById('movie-result').style.display = 'none';
+                updateButtonText();
+            };
+        });
+
+        // Dubbed filter checkbox
+        document.getElementById('dubbed-filter').onchange = () => {
+            showDubbedOnly = document.getElementById('dubbed-filter').checked;
+            updateButtonText();
+        };
+
+        // OTT selector
+        document.getElementById('ott-select').onchange = () => {
+            selectedOTT = document.getElementById('ott-select').value;
+        };
+
+        // Add to Favorites button
+        document.getElementById('add-to-favorites-btn').onclick = () => {
+            if (!currentMovie) return;
+            addToFavorites(currentMovie);
+        };
+
+        // Help Modal button
+        document.getElementById('help-btn').onclick = () => {
+            document.getElementById('help-modal').style.display = 'block';
+        };
+
+        // Favorites Modal button
+        document.getElementById('favorites-btn').onclick = () => {
+            document.getElementById('favorites-modal').style.display = 'block';
+            updateFavoritesDisplay();
+        };
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('app-content').style.display === 'none') return;
+            
+            if (e.key === '?') {
+                e.preventDefault();
+                document.getElementById('help-modal').style.display = 'block';
+            } else if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                document.getElementById('favorites-modal').style.display = 'block';
+                updateFavoritesDisplay();
+            } else if (e.key === 'Enter' && !e.ctrlKey) {
+                if (document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    document.getElementById('spin-btn').click();
+                }
+            } else if (e.key === 'h' || e.key === 'H') {
+                if (e.ctrlKey) return;
+                e.preventDefault();
+                document.getElementById('genre-select').value = '';
+                document.getElementById('lang-select').value = 'en';
+                document.getElementById('ott-select').value = '';
+                document.getElementById('dubbed-filter').checked = false;
+                showDubbedOnly = false;
+                selectedOTT = '';
+                updateButtonText();
+                showToast('✓ Filters reset to default', 'success');
+            }
+        });
+
+        // Close modals when clicking outside
+        window.onclick = (event) => {
+            const helpModal = document.getElementById('help-modal');
+            const favModal = document.getElementById('favorites-modal');
+            const historyModal = document.getElementById('history-modal');
+            
+            if (event.target == helpModal) helpModal.style.display = 'none';
+            if (event.target == favModal) favModal.style.display = 'none';
+            if (event.target == historyModal) historyModal.style.display = 'none';
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Reset all state for new user
+                userHistoryIds = [];
+                document.getElementById('dubbed-filter').checked = false;
+                document.getElementById('ott-select').value = '';
+                document.getElementById('genre-select').value = '';
+                document.getElementById('lang-select').value = 'en';
+                selectedOTT = '';
+                showDubbedOnly = false;
+                document.getElementById('movie-result').style.display = 'none';
+                document.getElementById('history-modal').style.display = 'none';
+                
+                document.getElementById('auth-form').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                document.getElementById('user-display').innerText = `Hello, ${user.email.split('@')[0]}`;
+                fetchGenres();
+                syncHistory();
+                loadFavorites();
+                updateButtonText();
+            } else {
+                document.getElementById('auth-form').style.display = 'block';
+                document.getElementById('app-content').style.display = 'none';
+            }
+        });
+
+        // MOVIE PICKER LOGIC
+        async function fetchGenres() {
+            const endpoint = currentType === 'tv' ? 'tv' : 'movie';
+            const res = await fetch(`https://api.themoviedb.org/3/genre/${endpoint}/list?api_key=${TMDB_KEY}`);
+            const data = await res.json();
+            const select = document.getElementById('genre-select');
+            select.innerHTML = '<option value="">All Genres</option>';
+            data.genres.forEach(g => { select.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+        }
+
+        function updateButtonText() {
+            const spinBtn = document.getElementById('spin-btn');
+            const typeText = currentType === 'tv' ? 'Series' : 'Movie';
+            const dubbedText = showDubbedOnly ? '(Dubbed)' : '';
+            const prefText = favorites.length > 0 && favoriteGenrePreference.length > 0 ? '⭐' : '🎲';
+            spinBtn.innerText = `${prefText} Find My Next ${typeText} ${dubbedText}`;
+            spinBtn.title = favorites.length > 0 ? `Based on your ${favorites.length} favorites` : 'Random discovery';
+        }
+
+        document.getElementById('spin-btn').onclick = async () => {
+            const spinBtn = document.getElementById('spin-btn');
+            spinBtn.innerText = "🔄 Analyzing your taste...";
+            
+            // Analyze favorite genres if user has favoriteS
+            if (favorites.length > 0) {
+                await analyzeFavoriteGenres();
+            }
+            
+            spinBtn.innerText = "🔍 Searching...";
+            
+            const genre = document.getElementById('genre-select').value;
+            const lang = document.getElementById('lang-select').value;
+            let attempts = 0;
+            const maxAttempts = 25; // Increased attempts to find preference matches
+            let found = false;
+            let preferenceMatched = false; // Track if we found a preference-matched movie
+            
+            while (!found && attempts < maxAttempts) {
+                attempts++;
+                const page = Math.floor(Math.random() * 8) + 1;
+                
+                const url = `https://api.themoviedb.org/3/discover/${currentType}?api_key=${TMDB_KEY}&with_original_language=${lang}${genre ? '&with_genres='+genre : ''}&page=${page}&sort_by=popularity.desc`;
+                
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const filtered = data.results.filter(m => !userHistoryIds.includes(m.id));
+
+                    if (filtered.length === 0) continue;
+                    
+                    // First pass: Look for movies matching favorite genres
+                    if (favoriteGenrePreference.length > 0 && !preferenceMatched) {
+                        for (let movie of filtered) {
+                            if (matchesFavoriteGenres(movie.genre_ids)) {
+                                const provRes = await fetch(`https://api.themoviedb.org/3/${currentType}/${movie.id}/watch/providers?api_key=${TMDB_KEY}`);
+                                const provData = await provRes.json();
+                                const providers = provData.results?.IN?.flatrate || [];
+                                
+                                if (providers.length > 0) {
+                                    if (selectedOTT && !providers.some(p => p.provider_name === selectedOTT)) {
+                                        continue;
+                                    }
+                                    
+                                    const dubbed = await fetchDubbedLanguages(movie.id, currentType);
+                                    
+                                    if (showDubbedOnly && !dubbed.includes(lang)) {
+                                        continue;
+                                    }
+                                    
+                                    showMovie(movie, providers, dubbed);
+                                    saveToFirebase(movie);
+                                    showToast('💡 Showing based on your favorites!', 'info');
+                                    spinBtn.innerText = "🎲 Find My Next Movie";
+                                    return;
+                                }
+                            }
+                        }
+                        preferenceMatched = true; // Fallback to any movie
+                    }
+                    
+                    // Second pass: Show any movie if no preference match found
+                    for (let movie of filtered) {
+                        const provRes = await fetch(`https://api.themoviedb.org/3/${currentType}/${movie.id}/watch/providers?api_key=${TMDB_KEY}`);
+                        const provData = await provRes.json();
+                        const providers = provData.results?.IN?.flatrate || [];
+                        
+                        if (providers.length > 0) {
+                            if (selectedOTT && !providers.some(p => p.provider_name === selectedOTT)) {
+                                continue;
+                            }
+                            
+                            const dubbed = await fetchDubbedLanguages(movie.id, currentType);
+                            
+                            if (showDubbedOnly && !dubbed.includes(lang)) {
+                                continue;
+                            }
+                            
+                            showMovie(movie, providers, dubbed);
+                            saveToFirebase(movie);
+                            found = true;
+                            break;
+                        }
+                    }
+                } catch (err) { console.error(err); }
+            }
+            
+            if (!found) {
+                const filter = showDubbedOnly ? `${lang} dubbed ` : '';
+                const ottFilter = selectedOTT ? `${selectedOTT} ` : '';
+                showToast(`No ${ottFilter}${filter}${currentType === 'tv' ? 'TV series' : 'movies'} found. Try adjusting filters!`, 'error');
+            }
+            
+            spinBtn.innerText = "🎲 Find My Next Movie";
+            updateButtonText();
+        };
+
+        async function fetchDubbedLanguages(itemId, type) {
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/${type}/${itemId}/translations?api_key=${TMDB_KEY}`);
+                const data = await res.json();
+                return data.translations.map(t => t.iso_639_1).filter(lang => lang && lang !== 'en');
+            } catch (err) {
+                console.error(err);
+                return [];
+            }
+        }
+
+        async function searchDubbed() {
+            const lang = document.getElementById('lang-select').value;
+            let attempts = 0;
+            const maxAttempts = 20;
+            
+            const langNames = {
+                'hi': 'Hindi', 'te': 'Telugu', 'ta': 'Tamil', 'kn': 'Kannada', 'ml': 'Malayalam',
+                'mr': 'Marathi', 'pa': 'Punjabi', 'bn': 'Bengali', 'gu': 'Gujarati', 'or': 'Odia',
+                'ur': 'Urdu', 'es': 'Spanish', 'ko': 'Korean'
+            };
+            
+            while (attempts < maxAttempts) {
+                attempts++;
+                const page = Math.floor(Math.random() * 8) + 1;
+                const type = Math.random() > 0.5 ? 'movie' : 'tv';
+                
+                const url = `https://api.themoviedb.org/3/discover/${type}?api_key=${TMDB_KEY}&page=${page}&sort_by=popularity.desc`;
+                
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    for (let movie of data.results) {
+                        if (userHistoryIds.includes(movie.id)) continue;
+                        
+                        // Check if it has OTT providers
+                        const provRes = await fetch(`https://api.themoviedb.org/3/${type}/${movie.id}/watch/providers?api_key=${TMDB_KEY}`);
+                        const provData = await provRes.json();
+                        const providers = provData.results?.IN?.flatrate || [];
+                        
+                        if (providers.length === 0) continue;
+                        
+                        // Check for dubbed versions
+                        const dubbed = await fetchDubbedLanguages(movie.id, type);
+                        if (dubbed.includes(lang)) {
+                            showMovie(movie, providers, dubbed);
+                            saveToFirebase(movie);
+                            return true;
+                        }
+                    }
+                } catch (err) { console.error(err); }
+            }
+            
+            alert(`No ${langNames[lang] || lang} dubbed content found with streaming platforms!`);
+            return false;
+        }
+
+        function generateStars(rating) {
+            const stars = Math.round(rating / 2); // Convert 0-10 to 0-5 stars
+            const fullStars = '⭐'.repeat(stars);
+            const emptyStars = '☆'.repeat(5 - stars);
+            return fullStars + emptyStars;
+        }
+
+        function showMovie(movie, otts, dubbed = []) {
+            currentMovie = movie; // Store for favorites feature
+            document.getElementById('movie-result').style.display = 'block';
+            document.getElementById('movie-title').innerText = movie.title || movie.name;
+            
+            // Display rating
+            const rating = movie.vote_average || 0;
+            const stars = generateStars(rating);
+            document.getElementById('rating-stars').innerText = stars;
+            document.getElementById('rating-value').innerText = `${rating.toFixed(1)}/10`;
+            
+            document.getElementById('movie-desc').innerText = movie.overview;
+            document.getElementById('movie-poster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+            
+            const ottDiv = document.getElementById('ott-list');
+            ottDiv.innerHTML = otts.length 
+                ? otts.map(o => `<img src="https://image.tmdb.org/t/p/original${o.logo_path}" class="ott-logo" title="${o.provider_name}">`).join('') 
+                : "<p style='color:#888'>Check local listings for streaming.</p>";
+            
+            // Display dubbed languages - only Indian languages
+            const langNames = {
+                'hi': 'Hindi', 'te': 'Telugu', 'ta': 'Tamil', 'kn': 'Kannada', 'ml': 'Malayalam',
+                'mr': 'Marathi', 'pa': 'Punjabi', 'bn': 'Bengali', 'gu': 'Gujarati', 'or': 'Odia', 'ur': 'Urdu'
+            };
+            
+            const dubbedDiv = document.getElementById('dubbed-langs');
+            // Remove duplicates and filter to only Indian languages
+            const uniqueDubbed = [...new Set(dubbed)].filter(lang => langNames.hasOwnProperty(lang));
+            
+            dubbedDiv.innerHTML = uniqueDubbed.length
+                ? uniqueDubbed.map(lang => `<span style="background: #444; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">${langNames[lang]}</span>`).join('')
+                : `<span style="color: #888; font-size: 12px;">Not available in dubbed versions</span>`;
+            
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+        }
+
+        async function saveToFirebase(movie) {
+            const ref = doc(db, "users", auth.currentUser.uid);
+            await setDoc(ref, {
+                historyIds: arrayUnion(movie.id),
+                historyFull: arrayUnion({id: movie.id, title: movie.title || movie.name, poster: movie.poster_path, type: currentType})
+            }, { merge: true });
+            syncHistory();
+        }
+
+        async function syncHistory() {
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                userHistoryIds = data.historyIds || [];
+                const fullHist = data.historyFull || [];
+                document.getElementById('history-list').innerHTML = fullHist.slice().reverse().map(m => `
+                    <div class="history-item" data-id="${m.id}" data-type="${m.type}" style="cursor: pointer;" title="Click to view details">
+                        <img src="https://image.tmdb.org/t/p/w500${m.poster}" title="${m.title}" alt="${m.title}">
+                    </div>
+                `).join('');
+                
+                // Add click handlers to history items
+                document.querySelectorAll('.history-item').forEach(item => {
+                    item.onclick = async () => {
+                        const movieId = item.getAttribute('data-id');
+                        const type = item.getAttribute('data-type');
+                        await displayHistoryItem(movieId, type);
+                    };
+                });
+            }
+        }
+
+        async function displayHistoryItem(movieId, type) {
+            try {
+                // Fetch full movie/series details
+                const res = await fetch(`https://api.themoviedb.org/3/${type}/${movieId}?api_key=${TMDB_KEY}`);
+                const movie = await res.json();
+                
+                // Fetch OTT providers
+                const provRes = await fetch(`https://api.themoviedb.org/3/${type}/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
+                const provData = await provRes.json();
+                const providers = provData.results?.IN?.flatrate || [];
+                
+                // Fetch dubbed languages
+                const dubbed = await fetchDubbedLanguages(movieId, type);
+                
+                // Display in modal
+                showHistoryModal(movie, providers, dubbed);
+            } catch (err) {
+                console.error(err);
+                alert('Error loading history item details');
+            }
+        }
+
+        function showHistoryModal(movie, otts, dubbed = []) {
+            const modal = document.getElementById('history-modal');
+            document.getElementById('history-modal-title').innerText = movie.title || movie.name;
+            
+            // Display rating
+            const rating = movie.vote_average || 0;
+            const stars = generateStars(rating);
+            document.getElementById('history-modal-rating-stars').innerText = stars;
+            document.getElementById('history-modal-rating-value').innerText = `${rating.toFixed(1)}/10`;
+            
+            document.getElementById('history-modal-desc').innerText = movie.overview;
+            document.getElementById('history-modal-poster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+            
+            // Display OTT providers
+            const ottDiv = document.getElementById('history-modal-otts');
+            ottDiv.innerHTML = otts.length 
+                ? otts.map(o => `<img src="https://image.tmdb.org/t/p/original${o.logo_path}" class="ott-logo" title="${o.provider_name}">`).join('') 
+                : "<p style='color:#888; font-size: 12px;'>Check local listings for streaming.</p>";
+            
+            // Display dubbed languages
+            const langNames = {
+                'hi': 'Hindi', 'te': 'Telugu', 'ta': 'Tamil', 'kn': 'Kannada', 'ml': 'Malayalam',
+                'mr': 'Marathi', 'pa': 'Punjabi', 'bn': 'Bengali', 'gu': 'Gujarati', 'or': 'Odia', 'ur': 'Urdu'
+            };
+            
+            const dubbedDiv = document.getElementById('history-modal-dubbed');
+            const uniqueDubbed = [...new Set(dubbed)].filter(lang => langNames.hasOwnProperty(lang));
+            
+            dubbedDiv.innerHTML = uniqueDubbed.length
+                ? uniqueDubbed.map(lang => `<span style="background: #444; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; display: inline-block;">${langNames[lang]}</span>`).join('')
+                : `<span style="color: #888; font-size: 12px;">Not available in dubbed versions</span>`;
+            
+            // Show modal at cursor or center
+            modal.style.display = 'block';
+            modal.style.left = (window.innerWidth / 2 - 250) + 'px';
+            modal.style.top = (window.innerHeight / 2 - 300) + 'px';
+        }
+    </script>
+</body>
+</html>
