@@ -164,8 +164,8 @@
             background: #333;
             color: white;
         }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--black); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 900px; width: 100%; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--black); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; }
+        .container { max-width: 900px; width: 100%; margin: 0 auto; padding: 0 15px; box-sizing: border-box; }
         input, select, button { padding: 12px; margin: 10px 0; border-radius: 4px; border: none; width: 100%; box-sizing: border-box; font-size: 16px; }
         select { flex: 1; }
         button { background: var(--red); color: white; font-weight: bold; cursor: pointer; }
@@ -215,20 +215,51 @@
             border: 2px solid var(--red);
             border-radius: 12px; 
             padding: 20px; 
-            max-width: 500px;
+            max-width: 420px;
+            width: 90vw;
             max-height: 70vh;
             overflow-y: auto;
             display: none; 
-            z-index: 1000; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 1001; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
+            box-sizing: border-box;
         }
         .history-modal h3 { margin-top: 0; color: var(--red); }
-        .history-modal-close { position: absolute; top: 10px; right: 15px; background: #555; border: none; color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; padding: 0; line-height: 1; }
+        .history-modal-close { 
+            position: absolute; 
+            top: 10px; 
+            right: 15px; 
+            background: #555; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            font-size: 18px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0; 
+            line-height: 1; 
+            z-index: 1002;
+        }
         .history-modal-close:hover { background: #666; }
         
+        /* Modal Backdrop */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            cursor: pointer;
+        }
+        .modal-backdrop.active { display: block; }
+
         /* Modal Heart Button */
         .modal-heart-btn {
             position: absolute;
@@ -278,7 +309,7 @@
             .ott-logo { width: 40px; height: 40px; }
             .history-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; }
             #auth-form { max-width: 90%; margin: 60px auto; padding: 25px; }
-            .history-modal { max-width: 90%; max-height: 80vh; padding: 15px; }
+            .history-modal { max-width: 450px; max-height: 80vh; padding: 12px; }
             #user-display { font-size: 18px; }
             h1 { font-size: 22px; }
             h2 { font-size: 18px; }
@@ -287,9 +318,9 @@
             .filter-row label { font-size: 13px; }
         }
 
-        @media (max-width: 600px) {
+@media (max-width: 600px) {
             body { padding: 12px; }
-            .container { max-width: 100%; }
+            .container { max-width: 100%; padding: 0 10px; }
             input, select, button { padding: 10px 8px; font-size: 13px; margin: 8px 0; }
             .tabs { flex-direction: column; gap: 6px; }
             .tab-btn { padding: 8px; font-size: 12px; }
@@ -306,16 +337,33 @@
             .filter-row { flex-direction: column; align-items: flex-start; gap: 8px; }
             .filter-row label { font-size: 12px; }
             .history-modal { 
-                max-width: 95%; 
-                max-height: 85vh; 
-                padding: 12px; 
-                left: 2.5% !important;
-                top: 10% !important;
-            }
+             max-width: 95vw; 
+             max-height: 85vh; 
+             padding: 10px;
+             }
             .history-modal-close { width: 28px; height: 28px; font-size: 16px; }
             #movie-rating { flex-direction: row; font-size: 14px; }
             .history-modal-title { font-size: 16px; }
             p { font-size: 13px; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .container { padding: 0 8px; }
+            input, select, button { padding: 8px 6px; font-size: 12px; }
+            .tabs { gap: 5px; }
+            .tab-btn { padding: 6px; font-size: 11px; }
+            .movie-card { padding: 10px; margin-top: 12px; }
+            .movie-flex img { max-width: 130px; }
+            .ott-logo { width: 32px; height: 32px; margin-right: 4px; }
+            .history-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; }
+            #auth-form { max-width: 100%; margin: 30px auto; padding: 15px; }
+            h1 { font-size: 16px; }
+            h2 { font-size: 14px; }
+            h3 { font-size: 12px; }
+            p { font-size: 12px; }
+            .history-modal { padding: 10px; max-height: 90vh; }
+            .history-modal-close { width: 26px; height: 26px; font-size: 14px; }
         }
 
         @media (max-width: 480px) {
@@ -355,7 +403,7 @@
         <div id="app-content" style="display: none;">
             <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="screenshots/logo.png" alt="MovieStream Logo" style="height: 40px;">
+                    <img src="screenshots/logo.png" alt="MovieStream Logo" style="height: 35px; max-width: 120px; object-fit: contain;">
                     <h2 id="user-display" style="margin: 0;">Welcome</h2>
                 </div>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
@@ -459,14 +507,17 @@
                 <h3 style="margin: 0;">Your Watch History</h3>
                 <button id="clear-history-btn" style="width: auto; background: #b20710; font-size: 14px; padding: 8px 15px;">🗑️ Clear History</button>
             </div>
-            <div id="history-list" class="history-grid"></div>
+<div id="history-list" class="history-grid"></div>
+            
+            <!-- Modal Backdrop -->
+            <div id="modal-backdrop" class="modal-backdrop" onclick="closeAllModals()"></div>
             
             <!-- Theater Movie Modal -->
             <div id="theater-modal" class="history-modal" style="border-color: #ff6b35;">
-                <button class="history-modal-close" onclick="document.getElementById('theater-modal').style.display='none';">✕</button>
-                <button id="theater-heart-btn" class="modal-heart-btn" title="Add to Favorites">♡</button>
-                <img id="theater-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">
-                <h3 id="theater-modal-title" style="margin: 10px 0;"></h3>
+                <button class="history-modal-close close-btn" style="z-index: 1003;">✕</button>
+                <button id="theater-heart-btn" class="modal-heart-btn" title="Add to Favorites" onclick="event.stopPropagation();">♡</button>
+                <img id="theater-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 150px; border-radius: 8px; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
+                <h3 id="theater-modal-title" style="margin: 8px 0; font-size: 18px; text-align: center;"></h3>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                     <span id="theater-modal-rating-stars" style="font-size: 16px;"></span>
                     <span id="theater-modal-rating-value" style="color: #ccc; font-weight: bold; font-size: 12px;"></span>
@@ -480,16 +531,16 @@
             </div>
             
             <!-- History Item Modal -->
-            <div id="history-modal" class="history-modal">
-                <button class="history-modal-close" onclick="document.getElementById('history-modal').style.display='none';">✕</button>
-                <button id="modal-heart-btn" class="modal-heart-btn" title="Add to Favorites">♡</button>
-                <img id="history-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">
-                <h3 id="history-modal-title" style="margin: 10px 0;"></h3>
+<div id="history-modal" class="history-modal">
+                <button class="history-modal-close close-btn" style="z-index: 1003;">✕</button>
+                <button id="modal-heart-btn" class="modal-heart-btn" title="Add to Favorites" onclick="event.stopPropagation();">♡</button>
+                <img id="history-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 150px; border-radius: 8px; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
+                <h3 id="history-modal-title" style="margin: 8px 0; font-size: 18px; text-align: center;"></h3>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                     <span id="history-modal-rating-stars" style="font-size: 16px;"></span>
                     <span id="history-modal-rating-value" style="color: #ccc; font-weight: bold; font-size: 12px;"></span>
                 </div>
-                <p id="history-modal-desc" style="line-height: 1.6; color: #ccc; font-size: 14px;"></p>
+                <p id="history-modal-desc" style="line-height: 1.5; color: #ccc; font-size: 13px; margin-bottom: 12px;"></p>
                 <h4 style="border-top: 1px solid #444; padding-top: 10px; margin-top: 15px; margin-bottom: 8px;">Streaming on:</h4>
                 <div id="history-modal-otts" style="margin-bottom: 15px;"></div>
                 <h4 style="margin-bottom: 8px;">Dubbed Languages:</h4>
@@ -839,31 +890,25 @@
             authBtn.innerText = '⏳ Loading...';
             
             try {
-                // Try to sign in first
                 await signInWithEmailAndPassword(auth, email, pass);
-                console.log('Sign in successful');
             } catch (signInError) {
-                console.log('Sign in failed, trying to create account:', signInError.code);
-                // If sign in fails, try to create account
-                if (signInError.code === 'auth/user-not-found') {
-                    try {
-                        await createUserWithEmailAndPassword(auth, email, pass);
-                        console.log('Account created successfully');
-                    } catch (signUpError) {
-                        console.error('Sign up error:', signUpError);
-                        showToast('Error: ' + signUpError.message, 'error');
-                        authBtn.disabled = false;
-                        authBtn.innerText = 'Get Started';
-                        authInProgress = false;
-                    }
+                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                   try {
+                   await createUserWithEmailAndPassword(auth, email, pass);
+                   } catch (signUpError) {
+                    // If creation also fails (e.g. wrong password for existing account)
+                    showToast('Invalid credentials or account exists with different password', 'error');
+                    authBtn.disabled = false;
+                    authBtn.innerText = 'Get Started';
+                    authInProgress = false;
+                 }
                 } else {
-                    console.error('Sign in error:', signInError);
                     showToast('Error: ' + signInError.message, 'error');
                     authBtn.disabled = false;
                     authBtn.innerText = 'Get Started';
                     authInProgress = false;
                 }
-            }
+          }
         };
 
         document.getElementById('logout-btn').onclick = () => {
@@ -945,18 +990,38 @@
             toggleModalFavorite();
         };
 
-        // Close all modals when clicking outside
+        // Helper to close history/theater modals and backdrop
+        function closeAllModals() {
+            document.getElementById('history-modal').style.display = 'none';
+            document.getElementById('theater-modal').style.display = 'none';
+            document.getElementById('modal-backdrop').classList.remove('active');
+        }
+
+        // Unified modal closing - backdrop and modal clicks
+        // BACKDROP ONLY closing - X buttons have direct onclick handlers
         window.onclick = (event) => {
-            const historyModal = document.getElementById('history-modal');
-            const theaterModal = document.getElementById('theater-modal');
+            const backdrop = document.getElementById('modal-backdrop');
+            if (event.target === backdrop) {
+                closeAllModals();
+            }
             const helpModal = document.getElementById('help-modal');
             const favoritesModal = document.getElementById('favorites-modal');
-            
-            if (event.target == historyModal) historyModal.style.display = 'none';
-            if (event.target == theaterModal) theaterModal.style.display = 'none';
-            if (event.target == helpModal) helpModal.style.display = 'none';
-            if (event.target == favoritesModal) favoritesModal.style.display = 'none';
+            if (event.target === helpModal || event.target === favoritesModal) {
+                event.target.style.display = 'none';
+            }
         };
+
+// Fix modal close buttons - add JS event listeners for reliability
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.close-btn, .history-modal-close').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    closeAllModals();
+                });
+            });
+        });
 
         // Help Modal button
         document.getElementById('help-btn').onclick = () => {
@@ -1151,6 +1216,7 @@
             updateTheaterHeartButton();
             
             modal.style.display = 'block';
+            document.getElementById('modal-backdrop').classList.add('active');
         }
 
         function updateTheaterHeartButton() {
@@ -1498,10 +1564,9 @@
             // Update heart button state
             updateModalHeartButton();
             
-            // Show modal at cursor or center
+            // Show modal centered (CSS handles positioning)
             modal.style.display = 'block';
-            modal.style.left = (window.innerWidth / 2 - 250) + 'px';
-            modal.style.top = (window.innerHeight / 2 - 300) + 'px';
+            document.getElementById('modal-backdrop').classList.add('active');
         }
     </script>
 </body>
