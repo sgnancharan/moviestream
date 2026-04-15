@@ -170,7 +170,7 @@
         select { flex: 1; }
         button { background: var(--red); color: white; font-weight: bold; cursor: pointer; }
         button:hover { background: #b20710; }
-        .movie-card { background: var(--grey); padding: 25px; border-radius: 12px; margin-top: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .movie-card { background: var(--grey); padding: 25px; border-radius: 12px; margin-top: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
         .movie-flex { display: flex; gap: 25px; flex-wrap: wrap; }
         .movie-flex img { width: 100%; max-width: 250px; border-radius: 8px; }
         .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -178,6 +178,30 @@
         .history-item:hover img { transform: scale(1.05); }
         #auth-form { max-width: 400px; margin: 80px auto; background: var(--grey); padding: 40px; border-radius: 12px; text-align: center; }
         .ott-logo { width: 45px; height: 45px; border-radius: 8px; margin-right: 10px; margin-top: 10px; object-fit: contain; background: rgba(255,255,255,0.1); padding: 4px; box-sizing: border-box; }
+        
+        /* Movie Card Heart Button */
+        .movie-heart-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            filter: drop-shadow(0 0 0px var(--red));
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .movie-heart-btn:hover { transform: scale(1.3); }
+        .movie-heart-btn.favorited { 
+            filter: drop-shadow(0 0 6px var(--red));
+            animation: heartGlow 0.3s ease;
+        }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 12px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
         .tab-btn.active { background: var(--red); }
@@ -197,6 +221,9 @@
             display: none; 
             z-index: 1000; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
         }
         .history-modal h3 { margin-top: 0; color: var(--red); }
         .history-modal-close { position: absolute; top: 10px; right: 15px; background: #555; border: none; color: white; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; padding: 0; line-height: 1; }
@@ -327,7 +354,10 @@
         <!-- MAIN APP CONTENT -->
         <div id="app-content" style="display: none;">
             <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                <h2 id="user-display">Welcome</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="screenshots/logo.png" alt="MovieStream Logo" style="height: 40px;">
+                    <h2 id="user-display" style="margin: 0;">Welcome</h2>
+                </div>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                     <button id="favorites-btn" style="width: auto; background: #444; font-size: 14px; padding: 8px 12px;">❤️ Favorites</button>
                     <button id="help-btn" style="width: auto; background: #444; font-size: 14px; padding: 8px 12px;">❓ Help</button>
@@ -339,9 +369,11 @@
                 <div class="tabs">
                     <button class="tab-btn active" data-type="movie">🎬 Movies</button>
                     <button class="tab-btn" data-type="tv">📺 Series</button>
+                    <button class="tab-btn" data-type="theaters">🎭 In Theaters</button>
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <select id="genre-select" style="flex: 1; min-width: 120px;"><option value="">All Genres</option></select>
+                <div id="filters-container">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select id="genre-select" style="flex: 1; min-width: 120px;"><option value="">All Genres</option></select>
                     <select id="lang-select" style="flex: 1; min-width: 120px;">
                         <option value="en">English</option>
                         <option value="hi">Hindi</option>
@@ -397,8 +429,15 @@
                 <button id="spin-btn">🎲 Find My Next Movie</button>
             </div>
 
+            <!-- IN THEATERS SECTION -->
+            <div id="theaters-section" style="display: none; margin-top: 30px;">
+                <h2 style="color: var(--red); margin-bottom: 15px;">🎭 Movies in Theaters Now</h2>
+                <div id="theaters-grid" class="history-grid"></div>
+            </div>
+
             <!-- RESULT CARD -->
             <div id="movie-result" class="movie-card">
+                <button id="movie-heart-btn" class="movie-heart-btn" title="Add to Favorites">♡</button>
                 <div class="movie-flex">
                     <img id="movie-poster" src="" alt="Poster">
                     <div style="flex: 1;">
@@ -412,7 +451,6 @@
                         <div id="ott-list"></div>
                         <h3 style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 8px;">Available Dubbed Languages:</h3>
                         <div id="dubbed-langs" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                        <button id="add-to-favorites-btn" style="margin-top: 20px; background: var(--red); width: auto; padding: 10px 20px;">❤️ Add to Favorites</button>
                     </div>
                 </div>
             </div>
@@ -422,6 +460,24 @@
                 <button id="clear-history-btn" style="width: auto; background: #b20710; font-size: 14px; padding: 8px 15px;">🗑️ Clear History</button>
             </div>
             <div id="history-list" class="history-grid"></div>
+            
+            <!-- Theater Movie Modal -->
+            <div id="theater-modal" class="history-modal" style="border-color: #ff6b35;">
+                <button class="history-modal-close" onclick="document.getElementById('theater-modal').style.display='none';">✕</button>
+                <button id="theater-heart-btn" class="modal-heart-btn" title="Add to Favorites">♡</button>
+                <img id="theater-modal-poster" src="" alt="Poster" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">
+                <h3 id="theater-modal-title" style="margin: 10px 0;"></h3>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span id="theater-modal-rating-stars" style="font-size: 16px;"></span>
+                    <span id="theater-modal-rating-value" style="color: #ccc; font-weight: bold; font-size: 12px;"></span>
+                </div>
+                <p id="theater-modal-desc" style="line-height: 1.6; color: #ccc; font-size: 14px;"></p>
+                <h4 style="border-top: 1px solid #444; padding-top: 10px; margin-top: 15px; margin-bottom: 8px; color: #ff6b35;">🎭 Now Showing in Theaters</h4>
+                <h4 style="margin-bottom: 8px;">Streaming Options:</h4>
+                <div id="theater-modal-otts" style="margin-bottom: 15px;"></div>
+                <h4 style="margin-bottom: 8px;">Dubbed Languages:</h4>
+                <div id="theater-modal-dubbed"></div>
+            </div>
             
             <!-- History Item Modal -->
             <div id="history-modal" class="history-modal">
@@ -536,9 +592,16 @@
         let currentModalMovie = null; // Current movie shown in modal for favorite operations
         let favoriteGenrePreference = []; // Cached favorite genre preferences
 
-        // Utility Functions
+        // ===== EXPOSE FUNCTIONS TO GLOBAL SCOPE =====
+        window.removeFromFavorites = removeFromFavorites;
+        window.viewTheaterMovie = viewTheaterMovie;
+        window.viewFavoriteItem = viewFavoriteItem;
+        window.showToast = showToast;
+
+        // Utility Functions - DEFINED FIRST
         function showToast(message, type = 'info', duration = 3000) {
             const container = document.getElementById('toast-container');
+            if (!container) return; // Safety check
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.innerHTML = `
@@ -589,12 +652,18 @@
         }
 
         function loadFavorites() {
-            const saved = localStorage.getItem(`favorites_${auth.currentUser?.uid}`);
-            favorites = saved ? JSON.parse(saved) : [];
-            updateFavoritesDisplay();
-            // Pre-analyze favorite genres for faster search prioritization
-            if (favorites.length > 0) {
-                analyzeFavoriteGenres();
+            try {
+                const saved = localStorage.getItem(`favorites_${auth.currentUser?.uid}`);
+                favorites = saved ? JSON.parse(saved) : [];
+                updateFavoritesDisplay();
+                // Pre-analyze favorite genres for faster search prioritization
+                if (favorites.length > 0) {
+                    analyzeFavoriteGenres();
+                }
+                console.log('Favorites loaded:', favorites.length);
+            } catch (err) {
+                console.error('Error loading favorites:', err);
+                favorites = [];
             }
         }
 
@@ -628,6 +697,7 @@
             saveFavorites();
             updateFavoritesDisplay();
             updateModalHeartButton();
+            updateMovieHeartButton();
             showToast('❤️ Removed from Favorites', 'success');
         }
 
@@ -664,6 +734,45 @@
                 saveFavorites();
                 updateFavoritesDisplay();
                 updateModalHeartButton();
+                updateMovieHeartButton();
+                showToast('❤️ Added to Favorites!', 'success');
+            }
+        }
+
+        function updateMovieHeartButton() {
+            if (!currentMovie) return;
+            const heartBtn = document.getElementById('movie-heart-btn');
+            const isFavorited = favorites.some(f => f.id === currentMovie.id);
+            
+            if (isFavorited) {
+                heartBtn.innerHTML = '❤️';
+                heartBtn.classList.add('favorited');
+            } else {
+                heartBtn.innerHTML = '♡';
+                heartBtn.classList.remove('favorited');
+            }
+        }
+
+        function toggleMovieFavorite() {
+            if (!currentMovie) return;
+            
+            const isFavorited = favorites.some(f => f.id === currentMovie.id);
+            
+            if (isFavorited) {
+                removeFromFavorites(currentMovie.id);
+                updateMovieHeartButton();
+            } else {
+                const newFav = {
+                    id: currentMovie.id,
+                    title: currentMovie.title || currentMovie.name,
+                    poster: currentMovie.poster_path,
+                    type: currentType
+                };
+                
+                favorites.push(newFav);
+                saveFavorites();
+                updateFavoritesDisplay();
+                updateMovieHeartButton();
                 showToast('❤️ Added to Favorites!', 'success');
             }
         }
@@ -703,27 +812,62 @@
             }
         }
 
-        // AUTHENTICATION LOGIC
+        // AUTHENTICATION LOGIC - SIMPLIFIED
+        let authInProgress = false;
         document.getElementById('auth-btn').onclick = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
+            if (authInProgress) return;
+            
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const authBtn = document.getElementById('auth-btn');
+            
             if (!email || !pass) {
                 showToast('Please fill all fields', 'error');
                 return;
             }
             if (!validateEmail(email)) {
-                showToast('Please enter a valid email address', 'error');
+                showToast('Please enter a valid email', 'error');
                 return;
             }
+            if (pass.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            authInProgress = true;
+            authBtn.disabled = true;
+            authBtn.innerText = '⏳ Loading...';
+            
             try {
+                // Try to sign in first
                 await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                try { await createUserWithEmailAndPassword(auth, email, pass); } 
-                catch (err) { alert("Check Email/Password format"); }
+                console.log('Sign in successful');
+            } catch (signInError) {
+                console.log('Sign in failed, trying to create account:', signInError.code);
+                // If sign in fails, try to create account
+                if (signInError.code === 'auth/user-not-found') {
+                    try {
+                        await createUserWithEmailAndPassword(auth, email, pass);
+                        console.log('Account created successfully');
+                    } catch (signUpError) {
+                        console.error('Sign up error:', signUpError);
+                        showToast('Error: ' + signUpError.message, 'error');
+                        authBtn.disabled = false;
+                        authBtn.innerText = 'Get Started';
+                        authInProgress = false;
+                    }
+                } else {
+                    console.error('Sign in error:', signInError);
+                    showToast('Error: ' + signInError.message, 'error');
+                    authBtn.disabled = false;
+                    authBtn.innerText = 'Get Started';
+                    authInProgress = false;
+                }
             }
         };
 
         document.getElementById('logout-btn').onclick = () => {
+            authInProgress = false;
             // Reset state when logging out
             userHistoryIds = [];
             selectedOTT = '';
@@ -754,33 +898,6 @@
             }
         };
 
-        // Close modal when clicking outside
-        window.onclick = (event) => {
-            const historyModal = document.getElementById('history-modal');
-            const helpModal = document.getElementById('help-modal');
-            const favoritesModal = document.getElementById('favorites-modal');
-            
-            if (event.target == historyModal) {
-                historyModal.style.display = 'none';
-            } else if (event.target == helpModal) {
-                helpModal.style.display = 'none';
-            } else if (event.target == favoritesModal) {
-                favoritesModal.style.display = 'none';
-            }
-        };
-
-        // Tab switching logic
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentType = btn.getAttribute('data-type');
-                fetchGenres();
-                document.getElementById('movie-result').style.display = 'none';
-                updateButtonText();
-            };
-        });
-
         // Dubbed filter checkbox
         document.getElementById('dubbed-filter').onchange = () => {
             showDubbedOnly = document.getElementById('dubbed-filter').checked;
@@ -792,15 +909,53 @@
             selectedOTT = document.getElementById('ott-select').value;
         };
 
-        // Add to Favorites button
-        document.getElementById('add-to-favorites-btn').onclick = () => {
-            if (!currentMovie) return;
-            addToFavorites(currentMovie);
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const newType = btn.getAttribute('data-type');
+                
+                if (newType === 'theaters') {
+                    // In Theaters mode
+                    currentType = 'movie';
+                    document.getElementById('movie-result').style.display = 'none';
+                    document.getElementById('filters-container').style.display = 'none';
+                    document.getElementById('theaters-section').style.display = 'block';
+                    loadTheatersMovies();
+                } else {
+                    // Normal movie/tv mode
+                    currentType = newType;
+                    document.getElementById('theaters-section').style.display = 'none';
+                    document.getElementById('filters-container').style.display = 'block';
+                    document.getElementById('movie-result').style.display = 'none';
+                    fetchGenres();
+                    updateButtonText();
+                }
+            };
+        });
+
+        // Movie Heart Button
+        document.getElementById('movie-heart-btn').onclick = () => {
+            toggleMovieFavorite();
         };
 
         // Modal Heart Button
         document.getElementById('modal-heart-btn').onclick = () => {
             toggleModalFavorite();
+        };
+
+        // Close all modals when clicking outside
+        window.onclick = (event) => {
+            const historyModal = document.getElementById('history-modal');
+            const theaterModal = document.getElementById('theater-modal');
+            const helpModal = document.getElementById('help-modal');
+            const favoritesModal = document.getElementById('favorites-modal');
+            
+            if (event.target == historyModal) historyModal.style.display = 'none';
+            if (event.target == theaterModal) theaterModal.style.display = 'none';
+            if (event.target == helpModal) helpModal.style.display = 'none';
+            if (event.target == favoritesModal) favoritesModal.style.display = 'none';
         };
 
         // Help Modal button
@@ -828,7 +983,10 @@
             } else if (e.key === 'Enter' && !e.ctrlKey) {
                 if (document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
                     e.preventDefault();
-                    document.getElementById('spin-btn').click();
+                    const spinBtn = document.getElementById('spin-btn');
+                    if (spinBtn.style.display !== 'none') {
+                        spinBtn.click();
+                    }
                 }
             } else if (e.key === 'h' || e.key === 'H') {
                 if (e.ctrlKey) return;
@@ -844,19 +1002,15 @@
             }
         });
 
-        // Close modals when clicking outside
-        window.onclick = (event) => {
-            const helpModal = document.getElementById('help-modal');
-            const favModal = document.getElementById('favorites-modal');
-            const historyModal = document.getElementById('history-modal');
+        onAuthStateChanged(auth, async (user) => {
+            const authBtn = document.getElementById('auth-btn');
+            console.log('Auth state changed, user:', user ? user.email : 'none');
             
-            if (event.target == helpModal) helpModal.style.display = 'none';
-            if (event.target == favModal) favModal.style.display = 'none';
-            if (event.target == historyModal) historyModal.style.display = 'none';
-        };
-
-        onAuthStateChanged(auth, (user) => {
             if (user) {
+                authInProgress = false;
+                authBtn.disabled = false;
+                authBtn.innerText = 'Get Started';
+                
                 // Reset all state for new user
                 userHistoryIds = [];
                 document.getElementById('dubbed-filter').checked = false;
@@ -868,28 +1022,172 @@
                 document.getElementById('movie-result').style.display = 'none';
                 document.getElementById('history-modal').style.display = 'none';
                 
+                // Show main app FIRST
                 document.getElementById('auth-form').style.display = 'none';
                 document.getElementById('app-content').style.display = 'block';
                 document.getElementById('user-display').innerText = `Hello, ${user.email.split('@')[0]}`;
-                fetchGenres();
-                syncHistory();
-                loadFavorites();
+                
+                // Then load data
+                try {
+                    await fetchGenres();
+                    console.log('Genres fetched');
+                } catch (err) {
+                    console.error('Error fetching genres:', err);
+                }
+                
+                try {
+                    await syncHistory();
+                    console.log('History synced');
+                } catch (err) {
+                    console.error('Error syncing history:', err);
+                }
+                
+                try {
+                    loadFavorites();
+                    console.log('Favorites loaded');
+                } catch (err) {
+                    console.error('Error loading favorites:', err);
+                }
+                
                 updateButtonText();
+                showToast('✓ Welcome to MovieStream!', 'success');
             } else {
+                authInProgress = false;
+                // Show auth form
                 document.getElementById('auth-form').style.display = 'block';
                 document.getElementById('app-content').style.display = 'none';
+                authBtn.disabled = false;
+                authBtn.innerText = 'Get Started';
+                console.log('User logged out');
             }
         });
 
         // MOVIE PICKER LOGIC
         async function fetchGenres() {
-            const endpoint = currentType === 'tv' ? 'tv' : 'movie';
-            const res = await fetch(`https://api.themoviedb.org/3/genre/${endpoint}/list?api_key=${TMDB_KEY}`);
-            const data = await res.json();
-            const select = document.getElementById('genre-select');
-            select.innerHTML = '<option value="">All Genres</option>';
-            data.genres.forEach(g => { select.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+            try {
+                const endpoint = currentType === 'tv' ? 'tv' : 'movie';
+                const res = await fetch(`https://api.themoviedb.org/3/genre/${endpoint}/list?api_key=${TMDB_KEY}`);
+                if (!res.ok) throw new Error('Failed to fetch genres');
+                const data = await res.json();
+                const select = document.getElementById('genre-select');
+                select.innerHTML = '<option value="">All Genres</option>';
+                data.genres.forEach(g => { select.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+                console.log('Genres loaded');
+            } catch (err) {
+                console.error('Error loading genres:', err);
+            }
         }
+
+        async function loadTheatersMovies() {
+            try {
+                console.log('Loading in-theaters movies...');
+                const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}&region=US&page=1`);
+                if (!res.ok) throw new Error('Failed to fetch theater movies');
+                const data = await res.json();
+                const grid = document.getElementById('theaters-grid');
+                
+                grid.innerHTML = data.results.slice(0, 12).map(m => `
+                    <div class="history-item" onclick="viewTheaterMovie(${m.id})" style="cursor: pointer;" title="${m.title}">
+                        <img src="https://image.tmdb.org/t/p/w500${m.poster_path}" alt="${m.title}">
+                    </div>
+                `).join('');
+                
+                console.log('Theater movies loaded');
+            } catch (err) {
+                console.error('Error loading theater movies:', err);
+                document.getElementById('theaters-grid').innerHTML = '<p style="color: #888;">Unable to load theater movies</p>';
+            }
+        }
+
+        async function viewTheaterMovie(movieId) {
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_KEY}`);
+                const movie = await res.json();
+                
+                const provRes = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${TMDB_KEY}`);
+                const provData = await provRes.json();
+                const providers = provData.results?.IN?.flatrate || [];
+                
+                const dubbed = await fetchDubbedLanguages(movieId, 'movie');
+                showTheaterModal(movie, providers, dubbed);
+            } catch (err) {
+                showToast('Error loading movie details', 'error');
+            }
+        }
+
+        function showTheaterModal(movie, otts, dubbed = []) {
+            const modal = document.getElementById('theater-modal');
+            currentModalMovie = movie;
+            
+            document.getElementById('theater-modal-title').innerText = movie.title || movie.name;
+            
+            // Display rating
+            const rating = movie.vote_average || 0;
+            const stars = generateStars(rating);
+            document.getElementById('theater-modal-rating-stars').innerText = stars;
+            document.getElementById('theater-modal-rating-value').innerText = `${rating.toFixed(1)}/10`;
+            
+            document.getElementById('theater-modal-desc').innerText = movie.overview;
+            document.getElementById('theater-modal-poster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+            
+            // Display OTT providers
+            const ottDiv = document.getElementById('theater-modal-otts');
+            ottDiv.innerHTML = otts.length 
+                ? otts.map(o => `<img src="https://image.tmdb.org/t/p/original${o.logo_path}" class="ott-logo" title="${o.provider_name}">`).join('') 
+                : '<p style="color:#888; font-size:12px;">Check local listings for streaming.</p>';
+            
+            // Display dubbed languages
+            const langNames = {
+                'hi': 'Hindi', 'te': 'Telugu', 'ta': 'Tamil', 'kn': 'Kannada', 'ml': 'Malayalam',
+                'mr': 'Marathi', 'pa': 'Punjabi', 'bn': 'Bengali', 'gu': 'Gujarati', 'or': 'Odia', 'ur': 'Urdu', 'es': 'Spanish', 'ko': 'Korean'
+            };
+            const dubbedDiv = document.getElementById('theater-modal-dubbed');
+            const uniqueDubbed = [...new Set(dubbed)].filter(lang => langNames.hasOwnProperty(lang));
+            dubbedDiv.innerHTML = uniqueDubbed.length
+                ? uniqueDubbed.map(lang => `<span style="background: #444; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">${langNames[lang]}</span>`).join('')
+                : `<span style="color: #888; font-size: 12px;">Not available dubbed</span>`;
+            
+            // Update heart button
+            updateTheaterHeartButton();
+            
+            modal.style.display = 'block';
+        }
+
+        function updateTheaterHeartButton() {
+            if (!currentModalMovie) return;
+            const heartBtn = document.getElementById('theater-heart-btn');
+            const isFavorited = favorites.some(f => f.id === currentModalMovie.id);
+            
+            if (isFavorited) {
+                heartBtn.innerHTML = '❤️';
+                heartBtn.classList.add('favorited');
+            } else {
+                heartBtn.innerHTML = '♡';
+                heartBtn.classList.remove('favorited');
+            }
+        }
+
+        // Theater Heart Button
+        document.getElementById('theater-heart-btn').addEventListener('click', () => {
+            if (!currentModalMovie) return;
+            const isFavorited = favorites.some(f => f.id === currentModalMovie.id);
+            
+            if (isFavorited) {
+                removeFromFavorites(currentModalMovie.id);
+            } else {
+                const newFav = {
+                    id: currentModalMovie.id,
+                    title: currentModalMovie.title || currentModalMovie.name,
+                    poster: currentModalMovie.poster_path,
+                    type: 'movie'
+                };
+                favorites.push(newFav);
+                saveFavorites();
+                updateFavoritesDisplay();
+                showToast('❤️ Added to Favorites!', 'success');
+            }
+            updateTheaterHeartButton();
+        });
 
         function updateButtonText() {
             const spinBtn = document.getElementById('spin-btn');
@@ -1095,6 +1393,9 @@
                 ? uniqueDubbed.map(lang => `<span style="background: #444; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">${langNames[lang]}</span>`).join('')
                 : `<span style="color: #888; font-size: 12px;">Not available in dubbed versions</span>`;
             
+            // Update heart button state
+            updateMovieHeartButton();
+            
             window.scrollTo({ top: 100, behavior: 'smooth' });
         }
 
@@ -1108,25 +1409,33 @@
         }
 
         async function syncHistory() {
-            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-            if (snap.exists()) {
-                const data = snap.data();
-                userHistoryIds = data.historyIds || [];
-                const fullHist = data.historyFull || [];
-                document.getElementById('history-list').innerHTML = fullHist.slice().reverse().map(m => `
-                    <div class="history-item" data-id="${m.id}" data-type="${m.type}" style="cursor: pointer;" title="Click to view details">
-                        <img src="https://image.tmdb.org/t/p/w500${m.poster}" title="${m.title}" alt="${m.title}">
-                    </div>
-                `).join('');
-                
-                // Add click handlers to history items
-                document.querySelectorAll('.history-item').forEach(item => {
-                    item.onclick = async () => {
-                        const movieId = item.getAttribute('data-id');
-                        const type = item.getAttribute('data-type');
-                        await displayHistoryItem(movieId, type);
-                    };
-                });
+            try {
+                const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    userHistoryIds = data.historyIds || [];
+                    const fullHist = data.historyFull || [];
+                    document.getElementById('history-list').innerHTML = fullHist.slice().reverse().map(m => `
+                        <div class="history-item" data-id="${m.id}" data-type="${m.type}" style="cursor: pointer;" title="Click to view details">
+                            <img src="https://image.tmdb.org/t/p/w500${m.poster}" title="${m.title}" alt="${m.title}">
+                        </div>
+                    `).join('');
+                    
+                    // Add click handlers to history items
+                    document.querySelectorAll('.history-item').forEach(item => {
+                        item.onclick = async () => {
+                            const movieId = item.getAttribute('data-id');
+                            const type = item.getAttribute('data-type');
+                            await displayHistoryItem(movieId, type);
+                        };
+                    });
+                } else {
+                    console.log('No history found, creating new user doc');
+                    document.getElementById('history-list').innerHTML = '';
+                }
+            } catch (err) {
+                console.error('Error syncing history:', err);
+                document.getElementById('history-list').innerHTML = '';
             }
         }
 
